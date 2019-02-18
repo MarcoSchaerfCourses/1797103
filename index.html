@@ -42,7 +42,6 @@
 			<button id="Robot">Robot</button>
 			&nbsp;&nbsp;&nbsp;&nbsp;
 			<button id="Dance">Dance</button>
-			<button id="Stop">Stop</button>
 		</div>
 
 		<script>
@@ -58,17 +57,7 @@
 			var targets = { cubes: [], bigcube: [], robot: [] };
 			var floor = -260;
 
-			var head = new THREE.Object3D();
-			var body = new THREE.Object3D();
-			var leftarm = new THREE.Object3D();
-			var leftarm_pivot = new THREE.Object3D();
-			var rightarm = new THREE.Object3D();
-			var rightarm_pivot = new THREE.Object3D();
-			var leftleg = new THREE.Object3D();
-			var leftleg_pivot = new THREE.Object3D();
-			var rightleg = new THREE.Object3D();
-			var rightleg_pivot = new THREE.Object3D();
-			var robot = new THREE.Object3D();
+			var dancedance = false;
 
 			init();
 			animate();
@@ -123,6 +112,18 @@
 				var geometry = new THREE.BoxBufferGeometry( 20, 20, 20 );
 				var texture = new THREE.TextureLoader().load( "texture.jpg" );
             	var material = new THREE.MeshBasicMaterial( { map: texture } );
+
+				var head = new THREE.Object3D();
+				var body = new THREE.Object3D();
+				var leftarm = new THREE.Object3D();
+				var leftarm_pivot = new THREE.Object3D();
+				var rightarm = new THREE.Object3D();
+				var rightarm_pivot = new THREE.Object3D();
+				var leftleg = new THREE.Object3D();
+				var leftleg_pivot = new THREE.Object3D();
+				var rightleg = new THREE.Object3D();
+				var rightleg_pivot = new THREE.Object3D();
+				var robot = new THREE.Object3D();
 
 				for ( var i = 0; i < 729; i ++ ) {
 					var object1 = new THREE.Mesh( geometry, material );
@@ -290,30 +291,31 @@
 
 				var dance = document.getElementById('Dance');
 				dance.addEventListener( 'click', function () {
-					tween1.start();
-					tween2.start();
-					tween3.start();
-					tween4.start();
-					tween5.start();
-					tween6.start();
+					if (dancedance == false) {
+						tween1.start();
+						tween2.start();
+						tween3.start();
+						tween4.start();
+						tween5.start();
+						tween6.start();
+						dancedance = true;
+					} else {
+						tween1.stop();
+						tween2.stop();
+						tween3.stop();
+						tween4.stop();
+						tween5.stop();
+						tween6.stop();
+						tween7.stop();
+						tween8.stop();
+						tween9.stop();
+						tween10.stop();
+						tween11.stop();
+						tween12.stop();
+						dancedance = false;
+					}
 				}, false );
 				
-				var stop = document.getElementById('Stop');
-				stop.addEventListener( 'click', function () {
-					tween1.stop();
-					tween2.stop();
-					tween3.stop();
-					tween4.stop();
-					tween5.stop();
-					tween6.stop();
-					tween7.stop();
-					tween8.stop();
-					tween9.stop();
-					tween10.stop();
-					tween11.stop();
-					tween12.stop();
-				}, false );
-
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
