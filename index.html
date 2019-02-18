@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Interactive Grphics Course Final Project</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #f0f0f0;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 0; /* to not conflict with dat.gui */
+				display:block;
+			}
+			#menu {
+				position: absolute;
+				bottom: 20px;
+				width: 100%;
+				text-align: center;
+			}
+		</style>
+	</head>
+	<body>
+		<script src="js/Three.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		<script src="js/stats.min.js"></script>
+		<script src="js/WebGL.js"></script>
+		<script src="js/Tween.js"></script>
+
+		<div id="info">Interactive Graphics Course Final Project</div>
+		<div id="container"></div>
+		<div id="menu">
+			<button id="Cubes">Cubes</button>
+			<button id="BigCube">BIG Cube</button>
+			<button id="Robot">Robot</button>
+			&nbsp;&nbsp;&nbsp;&nbsp;
+			<button id="Dance">Dance</button>
+			<button id="Stop">Stop</button>
+		</div>
+
+		<script>
+
+            if ( WEBGL.isWebGLAvailable() === false ) {
+				document.body.appendChild( WEBGL.getWebGLErrorMessage() );
+			}
+            
+			var container, stats;
+			var camera, controls, scene, renderer;
+
+			var objects = [];
+			var targets = { cubes: [], bigcube: [], robot: [] };
+			var floor = -260;
+
+			var head = new THREE.Object3D();
+			var body = new THREE.Object3D();
+			var leftarm = new THREE.Object3D();
+			var leftarm_pivot = new THREE.Object3D();
+			var rightarm = new THREE.Object3D();
+			var rightarm_pivot = new THREE.Object3D();
+			var leftleg = new THREE.Object3D();
+			var leftleg_pivot = new THREE.Object3D();
+			var rightleg = new THREE.Object3D();
+			var rightleg_pivot = new THREE.Object3D();
+			var robot = new THREE.Object3D();
+
+			init();
+			animate();
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera.position.set(500, 500, 500);
+
+				controls = new THREE.OrbitControls( camera );
+				controls.target.set(0, 0, 0);
+
+                scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xcce0ff );
+				
+				// LIGHTS
+				var ambient = new THREE.AmbientLight( 0x666666 );
+				scene.add( ambient );
+
+				var spotLight = new THREE.SpotLight( 0xffffff );
+				spotLight.position.set( 700, 700, 700 );
+				spotLight.angle = Math.PI / 4;
+				spotLight.penumbra = 0.05;
+				spotLight.decay = 1;
+				spotLight.distance = 2500;
+
+				spotLight.castShadow = true;
+				spotLight.shadow.mapSize.width = 1024;
+				spotLight.shadow.mapSize.height = 1024;
+				spotLight.shadow.camera.near = 10;
+				spotLight.shadow.camera.far = 1000;
+				scene.add( spotLight );
+
+				//lightHelper = new THREE.SpotLightHelper( spotLight );
+				//scene.add( lightHelper );
+				//shadowCameraHelper = new THREE.CameraHelper( spotLight.shadow.camera );
+				//scene.add( shadowCameraHelper );				
+				//scene.add( new THREE.AxesHelper( 500 ) );
+				
+				var solidGround = new THREE.Mesh( 
+					new THREE.PlaneBufferGeometry( 5000, 5000 ),
+					new THREE.MeshPhongMaterial({ color: 0xffdd99,
+						polygonOffset: true, polygonOffsetFactor: 1.0, polygonOffsetUnits: 4.0
+					}));
+            	solidGround.position.set( 0, floor, 0 );
+            	solidGround.rotation.x = - Math.PI / 2;
+            	solidGround.receiveShadow = true;
+            	scene.add( solidGround );
+
+				var geometry = new THREE.BoxBufferGeometry( 20, 20, 20 );
+				var texture = new THREE.TextureLoader().load( "texture.jpg" );
+            	var material = new THREE.MeshBasicMaterial( { map: texture } );
+
+				for ( var i = 0; i < 729; i ++ ) {
+					var object1 = new THREE.Mesh( geometry, material );
+					object1.castShadow = true;
+					var object2 = new THREE.Object3D();
+					object2.position.x = object1.position.x = Math.random() * 1000 - 500;
+					object2.position.y = object1.position.y = Math.random() * 1000 - 250;
+					object2.position.z = object1.position.z = Math.random() * 1000 - 500;
+					object2.rotation.x = object1.rotation.x = Math.random() * 2 * Math.PI;
+					object2.rotation.y = object1.rotation.y = Math.random() * 2 * Math.PI;
+					object2.rotation.z = object1.rotation.z = Math.random() * 2 * Math.PI;
+
+					if (i < 27) {
+						head.add(object1);
+					} else if (i < 243) {
+						body.add(object1);
+					} else if (i < 324) {
+						leftarm.add(object1);
+					} else if (i < 405) {
+						rightarm.add(object1);
+					} else if (i < 567) {
+						leftleg.add(object1);
+					} else if (i < 729) {
+						rightleg.add(object1);
+					}
+				
+					objects.push( object1 );			
+					targets.cubes.push( object2 );
+				}
+				
+				for ( var i = 0; i < objects.length; i ++ ) {
+					var object = new THREE.Object3D();
+					object.position.x = ( ( i % 9 ) * 20 ) - 80;
+					object.position.y = ( ( Math.floor( i / 9 ) % 9 ) * 20 ) - 80;
+					object.position.z = ( Math.floor( i / 81 ) ) * 20 - 80;
+					targets.bigcube.push( object );
+				}
+
+				for ( var i = 0; i < objects.length; i ++ ) {
+					var object = new THREE.Object3D();
+					var j, k, l, m, n, o, p, q, r;
+					if (i < 27) {
+						object.position.x = ( ( i % 3 ) * 20 ) - 20;
+						object.position.z = ( ( Math.floor( i / 3 ) % 3 ) * 20 ) - 20;
+						object.position.y = ( Math.floor( i / 9 ) ) * 20  + 250;
+					} else if (i < 135) {
+						j = i - 27;
+						object.position.x = ( ( j % 3 ) * 20 ) - 20;
+						object.position.z = ( ( Math.floor( j / 3 ) % 3 ) * 20 ) - 20;
+						object.position.y = ( Math.floor( j / 9 ) ) * 20  + 10;
+					} else if (i < 189) {
+						k = i - 135;
+						object.position.y = ( ( k % 3 ) * 20 ) + 190;
+						object.position.z = ( ( Math.floor( k / 3 ) % 3 ) * 20 ) - 20;
+						object.position.x = ( Math.floor( k / 9 ) ) * 20  - 140;
+					} else if (i < 243) {
+						l = i - 189;
+						object.position.y = ( ( l % 3 ) * 20 ) + 190;
+						object.position.z = ( ( Math.floor( l / 3 ) % 3 ) * 20 ) - 20;
+						object.position.x = ( Math.floor( l / 9 ) ) * 20  + 40;
+					} else if (i < 324) {
+						m = i - 243;
+						object.position.x = ( ( m % 3 ) * 20 ) - 200;
+						object.position.z = ( ( Math.floor( m / 3 ) % 3 ) * 20 ) - 20;
+						object.position.y = ( Math.floor( m / 9 ) ) * 20  + 190;
+					} else if (i < 405) {
+						n = i - 324;
+						object.position.x = ( ( n % 3 ) * 20 ) + 160;
+						object.position.z = ( ( Math.floor( n / 3 ) % 3 ) * 20 ) - 20;
+						object.position.y = ( Math.floor( n / 9 ) ) * 20  + 190;
+					} else if (i < 522) {
+						o = i - 405;
+						object.position.x = ( ( o % 3 ) * 20 ) - 80;
+						object.position.z = ( ( Math.floor( o / 3 ) % 3 ) * 20 ) - 20;
+						object.position.y = ( Math.floor( o / 9 ) ) * 20  - 190;
+					} else if (i < 567) {
+						p = i - 522;
+						object.position.x = ( ( p % 3 ) * 20 ) - 80;
+						object.position.y = ( ( Math.floor( p / 3 ) % 3 ) * 20 ) - 250;
+						object.position.z = ( Math.floor( p / 9 ) ) * 20  - 20;
+					} else if (i < 684) {
+						q = i - 567;
+						object.position.x = ( ( q % 3 ) * 20 ) + 40;
+						object.position.z = ( ( Math.floor( q / 3 ) % 3 ) * 20 ) - 20;
+						object.position.y = ( Math.floor( q / 9 ) ) * 20  - 190;
+					} else if (i < 729) {
+						r = i - 684;
+						object.position.x = ( ( r % 3 ) * 20 ) + 40;
+						object.position.y = ( ( Math.floor( r / 3 ) % 3 ) * 20 ) - 250;
+						object.position.z = ( Math.floor( r / 9 ) ) * 20  - 20;
+					}
+					targets.robot.push( object );
+				}
+
+				leftarm.position.y = -210;
+				leftarm_pivot.add( leftarm );
+				leftarm_pivot.position.y = 210;
+				rightarm.position.y = -210;
+				rightarm_pivot.add( rightarm );
+				rightarm_pivot.position.y = 210;
+				leftleg.position.y = -30;
+				leftleg_pivot.add( leftleg );
+				leftleg_pivot.position.y = 30;
+				rightleg.position.y = -30;
+				rightleg_pivot.add( rightleg );
+				rightleg_pivot.position.y = 30;
+
+				robot.add( head );
+				robot.add( body );
+				robot.add( leftarm_pivot );
+				robot.add( rightarm_pivot );
+				robot.add( leftleg_pivot );
+				robot.add( rightleg_pivot );
+				scene.add( robot );
+
+				var tween1 = new TWEEN.Tween( robot.position )
+					.to({y: -260}, 1000)
+                	.easing(TWEEN.Easing.Exponential.InOut);
+				var tween2 = new TWEEN.Tween( leftleg_pivot.rotation )
+					.to({x: Math.PI / 2}, 1000) 
+                	.easing(TWEEN.Easing.Exponential.InOut);
+            	var tween3 = new TWEEN.Tween( rightleg_pivot.rotation )
+                	.to({x: - Math.PI / 2}, 1000)
+                	.easing(TWEEN.Easing.Exponential.InOut);
+				var tween4 = new TWEEN.Tween( leftarm_pivot.rotation )
+					.to({x: - Math.PI / 2}, 1000)
+                	.easing(TWEEN.Easing.Exponential.InOut);
+            	var tween5 = new TWEEN.Tween( rightarm_pivot.rotation )
+                	.to({x: Math.PI / 2}, 1000)
+                	.easing(TWEEN.Easing.Exponential.InOut);
+				var tween6 = new TWEEN.Tween( head.rotation )
+					.to({y: Math.PI}, 1000)
+					.easing(TWEEN.Easing.Exponential.InOut);
+				var tween7 = new TWEEN.Tween( robot.position )
+					.to({y: 0}, 1000)
+                	.easing(TWEEN.Easing.Exponential.InOut);
+				var tween8 = new TWEEN.Tween( leftleg_pivot.rotation )
+					.to({x: 0}, 1000) 
+                	.easing(TWEEN.Easing.Exponential.InOut);
+            	var tween9 = new TWEEN.Tween( rightleg_pivot.rotation )
+                	.to({x: 0}, 1000)
+                	.easing(TWEEN.Easing.Exponential.InOut);
+				var tween10 = new TWEEN.Tween( leftarm_pivot.rotation )
+					.to({x: 0}, 1000)
+                	.easing(TWEEN.Easing.Exponential.InOut);
+            	var tween11 = new TWEEN.Tween( rightarm_pivot.rotation )
+                	.to({x: 0}, 1000)
+                	.easing(TWEEN.Easing.Exponential.InOut);
+				var tween12 = new TWEEN.Tween( head.rotation )
+					.to({y: 0}, 1000)
+					.easing(TWEEN.Easing.Exponential.InOut);
+					
+				tween1.chain(tween7);
+				tween7.chain(tween1);
+				tween2.chain(tween8);
+				tween8.chain(tween2);
+				tween3.chain(tween9);
+				tween9.chain(tween3);
+				tween4.chain(tween10);
+				tween10.chain(tween4);
+				tween5.chain(tween11);
+				tween11.chain(tween5);
+				tween6.chain(tween12);
+				tween12.chain(tween6);
+
+				var dance = document.getElementById('Dance');
+				dance.addEventListener( 'click', function () {
+					tween1.start();
+					tween2.start();
+					tween3.start();
+					tween4.start();
+					tween5.start();
+					tween6.start();
+				}, false );
+				
+				var stop = document.getElementById('Stop');
+				stop.addEventListener( 'click', function () {
+					tween1.stop();
+					tween2.stop();
+					tween3.stop();
+					tween4.stop();
+					tween5.stop();
+					tween6.stop();
+					tween7.stop();
+					tween8.stop();
+					tween9.stop();
+					tween10.stop();
+					tween11.stop();
+					tween12.stop();
+				}, false );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+				renderer.shadowMap.enabled = true;
+				renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+				stats = new Stats();
+				container.appendChild( stats.dom );
+
+				var button1 = document.getElementById( 'Cubes' );
+				button1.addEventListener( 'click', function () {
+					transform( targets.cubes, 2000 );		
+				}, false );
+				var button2 = document.getElementById( 'BigCube' );
+				button2.addEventListener( 'click', function () {
+					transform( targets.bigcube, 2000 );
+				}, false );
+				var button3 = document.getElementById( 'Robot' );
+				button3.addEventListener( 'click', function () {
+					transform( targets.robot, 2000 );
+				}, false );
+
+				window.addEventListener( 'resize', onWindowResize, false );
+			}
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+			
+			function transform( targets, duration ) {
+				TWEEN.removeAll();
+				for ( var i = 0; i < objects.length; i ++ ) {
+					var object = objects[ i ];
+					var target = targets[ i ];
+					new TWEEN.Tween( object.position )
+						.to( { x: target.position.x, y: target.position.y, z: target.position.z }, Math.random() * duration + duration )
+						.easing( TWEEN.Easing.Exponential.InOut )
+						.start();
+					new TWEEN.Tween( object.rotation )
+						.to( { x: target.rotation.x, y: target.rotation.y, z: target.rotation.z }, Math.random() * duration + duration )
+						.easing( TWEEN.Easing.Exponential.InOut )
+						.start();
+				}
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				TWEEN.update();
+				controls.update();
+				stats.update();
+				render();
+				
+			}
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+		</script>
+
+	</body>
+</html>
