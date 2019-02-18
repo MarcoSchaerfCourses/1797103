@@ -31,7 +31,6 @@
 		<script src="js/Three.js"></script>
 		<script src="js/OrbitControls.js"></script>
 		<script src="js/stats.min.js"></script>
-		<script src="js/WebGL.js"></script>
 		<script src="js/Tween.js"></script>
 
 		<div id="info">Interactive Graphics Course Final Project</div>
@@ -45,10 +44,6 @@
 		</div>
 
 		<script>
-
-            if ( WEBGL.isWebGLAvailable() === false ) {
-				document.body.appendChild( WEBGL.getWebGLErrorMessage() );
-			}
             
 			var container, stats;
 			var camera, controls, scene, renderer;
